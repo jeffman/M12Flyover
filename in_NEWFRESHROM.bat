@@ -1,0 +1,1 @@
+copy "Copy of Mother 1+2 (E).gba" m12.gba /Y

@@ -1,0 +1,1380 @@
+<html>
+<head>
+
+
+<style>
+<!--
+b    {font-family: verdana; color: blue}
+body {font-family: verdana}
+pre  {font-family: courier-new}
+code {color: red; font-family: verdana}
+dir  {color: green; font-family:verdana}
+-->
+</style>
+
+</head>
+<body>
+
+<b>
+goldroad ARM assembler <br>
+-----------------------
+</b>
+
+<pre>
+
+ARM/THUMB assembler for ARM7 (ARM7, ARM7DTMI) series processors
+
+<b>
+v.1.6
+-----
+</b>
+contents
+-------
+
+1.	 disclaimer
+2. 	 license
+3. 	 intro
+4. 	 background
+5. 	 description / revision history
+6.	 usage
+7. 	 features
+8. 	 assembler directives
+9. 	 bug reports
+10. 	 planned for 1.7
+11. 	 known bugs
+12. 	 interesting facts about goldroad ARM assembler
+13. 	 about the author
+14. 	 thanks & greetings
+15. 	 dedication
+16.	 appendix (source code examples)	
+
+<b>
+1. disclaimer
+-------------
+</b>
+This software is provided "as is". It is not guaranteed to be bug free and is not
+guranteed to work on your machine. Use this software at your own risk. If you
+do not accept these terms please destroy this software.
+<b>
+2. license
+---------
+</b>
+This software is free for non-commercial use. It must be distributed
+with this file. It must not be sold for profit. If you want to discuss any of these
+terms contact the author robware@another.com. If you wish to use this software
+for commerical purposes please contact the author to discuss terms. 
+<b>
+3.Intro
+-------
+</b>
+Version 1.6 adds the things users have been requesting...full THUMB support,
+better error detection, assemble-time expression evaluation ! :)
+
+Due to the better error detection, one or 2 demos written with this assembler
+may assemble with syntax errors ;(... the main reason for this will be 
+omitted [ ] on loads, so please observe full ARM syntax from now on :)
+
+GameBoy Advance is probably the last EVER console for which it will be worth
+programming in assembler, so enjoy it while you can!!
+
+Enjoy!
+<b>
+4.Background
+------------
+</b>
+The starting code for this assembler was conceived as part of a compiler writing
+project, which sadly, never came to fruition.  I begun writing an ARM assembler
+but some instabilities in the tokenising class led to this being abandoned too.
+
+Then, I decided to have another look at the code. About this time I got flu, so
+with nothing else to do, I coded this assembler for about 8 hours a day for 3
+days...and v1 was the result. 
+
+The main reason for writing the assembler is actually just to use myself. I like
+the ethos of making your own tools and people making free alternatives to costly/
+official software.
+
+<b>
+5.Description
+-------------
+</b>
+
+
+changes from 1.5c - 1.6
+-----------------------
+- THUMB support ... at last
+- stack calculator
+- bug fixes in conditional assembly
+- @defines now global not local
+- faster assembly, cleaner code
+- new pseudo ops and directives synonyms
+- new directives...@arm,@thumb,@org,@echo,@lineno
+- + more
+<b>
+- IMPORTANT: theres one or two small syntax changes, which affects macros with
+  arguments, and the @dup directive, so be sure to re-read those sections.
+</b>
+changes from 1.5b - 1.5c
+------------------------
+
+- the "lost version" ;) I can't remeber exactly what the 
+  changes were...some bug fixes i think
+
+
+changes from 1.5 - 1.5a - 1.5b
+----------------------
+
+- several @textarea related bug fixes
+- @ascii directive improved
+- block comments with C syntax /* comment */
+
+changes from 1.4 - 1.5
+----------------------
+
+- full & nested macro capability
+- optimised literal pool generation
+- improved @textarea capability for assembling code intended for several different locations
+- conditional assembly; @ifdef, @ifndef, @else, @endif, @undef
+- no longer changes appearance of input file when errors are reported
+- full @define capability - unlike before,you can now alias labels and even instruction names
+- small size bug fixed in @ascii directive
+- converted this doc to html
+
+changes from 1.3 - 1.4
+----------------------
+
+- literal pool generation
+- mov reg,labeladdress instructions now assemble to ldr reg,=labelAddress, far
+  more efficient
+- combinations of @dcb's, @dcw's, @dcd's,@incbin & @dup's now align efficiently
+  when used together
+- file padding to any size
+- endiene switch for programming devices other than Gameboy Advance :)
+- numerous bug fixes
+- @ascii directive (see restrictions)
+
+changes from 1.2 - 1.3
+----------------------
+
+- syntax changes to bring closer to sdt
+- sdt syntax for post inc load and store, and directive names
+- all number formats supported
+- include directive for sourcecode
+- define directive for constants
+- full two pass assembler, reference labels from anywhere
+- msr opcode with immediate operand
+- rrx and other special case rotations fixed
+- constants can be added to loads from labels
+- better error detection - e.g. attempts to use register specified shifts
+  with load/store ops
+
+changes from 1.1 - 1.2
+----------------------
+
+- #dup directive
+- #textarea directive for multi-boot
+- label address tables using #dw
+- fixed incorrect stacking direction in stm
+- fixed rare alignment bug with #bindata directive
+- fixed RRX in data processing ops
+
+changes from 1.0 - 1.1
+-----------------------
+
+- added #bindata directive
+- added #dh (define halfword) directive
+- fixed #db (define byte) directive
+- improved error detection/recovery
+<b>
+6. Usage
+--------
+</b>
+goldroad ARM assembler is a console mode command line program, the syntax is:
+
+goldroad sourcefile.asm outputfile.gba
+
+you could easily write a .bat file to avoid opening a dos window or a run box from
+the start button in windows, e.g. just create a file called eg. assemble.bat
+and type:
+
+goldroad sourcefile.asm outputfile.gba
+
+with the path added if necessary. Then just click this file to assemble and change the
+names in the file when necessary. Of course, the assembler doesn't require that the
+source file be an .asm file, nor is it necessary for the object file to be .gba, you
+could simply subsitute anything for these, e.g. .txt, .bin, .s etc.	
+
+command line options :
+----------------------
+run the exe without any params for the full list if you forget...
+
+-v	verbose mode...full comments about whats going on in the assembly process
+-l	generate list of symbol table, v useful for locating code to debug
+	(makes file symtab.txt)
+-d	@define from the command line. This can only be used to define symbols for
+	use with conditional assembly, e.g. -d DEBUG 
+
+example
+-------
+
+goldroad src.asm mygame.gba -d DEBUG -v -l
+
+
+<b>
+7.Features
+----------
+</b>
+v1.6    Conventions
+-------------------
+
+stack calculator
+----------------
+
+the following operators are supported:
+
++	(ADD)
+-	(SUBTRACT)
+-	(UNARY MINUS)
+*	(MULTIPLY)
+/	(DIVIDE)
+>>	(SHIFT RIGHT)
+<< 	(SHIFT LEFT)
+&	(AND)
+|	(OR)
+~	(INVERT)	
+^	(EXCLUSIVE OR)
+(
+)	(FORCE PRESEDENCE)
+?	(REMAINDER...i know)
+
+the precidence leves are in accord with the C standard.
+
+All opcodes which take an immediate value accept an expression. e.g.
+<code>
+mov r1,(0xff<<24)			; equivalent to mov r1,0xff000000
+and r0,r0,((~0x1)&0xFF)			; equivalent to and r0,r0,0xfe
+</code>
+
+In your expressions you	can also use labels, and the £ symbol which signifies the
+current position in the object file,
+e.g.
+
+<code>
+ARRAY			@dcb 0,1,2,3,4,5,6,7,8,9,10
+ARRAYSIZE		@dcb (£ - ARRAY)
+</code>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+conditional assembly
+--------------------
+
+I have tried to provide C style conditional features. The directives supported in relation
+to this are:
+
+<dir>
+@define
+@ifdef
+@ifndef
+@undef
+@else
+@endif
+</dir>
+
+of course @define can also be used to give names to constant values, but can also be
+used with only one argument, e.g.
+
+<dir>
+@define DEBUG
+</dir>
+
+;then....
+
+<dir>
+@ifdef DEBUG
+;if DEBUG is defined, assemble this code
+@else
+;otherwise, assemble this code
+@endif
+;...continue
+</dir>
+
+As far as i can think, these directives should be used in the exact same way as in a 
+c compiler. However, @define is NOT used for defining macros...
+
+
+NOTE: in 1.6 @defines are global not local, so at last you can make include files
+      with defines in ;)
+
+macros
+------
+
+Macros are wtitten MASM style; to define a macro, the basic syntax is...
+
+<dir>
+@macro macroname
+;the macro code
+;more code...
+@endm
+</dir>
+
+now when you put macroname in your code, it will be expanded to the full contents of the
+macro. You can also define macros with arguments,
+
+<dir>
+@macro macroname arg1,arg2,arg3
+mov r0,arg1
+and r0,r0,arg2
+sub r2,r2,arg3
+@endm
+</dir>
+
+and you should then "call" the macro using something like:
+<code>
+macroname 100,0xFF,0
+</code>
+so the code will expand to:
+<code>
+mov r0,100
+and r0,r0,0xFF
+sub r2,r2,0
+</code>
+
+NOTE:
+you can parse expressions to macros, but take note of the known bug regarding expressions
+in macros or defines in the know bugs section...
+
+You can nest macros too. For example...
+
+<code>
+
+@macro mac1 label
+mov r0,label
+@endm
+
+@macro mac2 label
+mac1 label
+bx r0
+@endm
+
+</code>
+
+so putting:
+
+<code>
+
+mac2 mylabel 
+</code>
+
+will assemble to...
+<code>
+
+mov r0,mylabel
+bx r0
+</code>
+
+Furthermore, you can do a little more with macros than in a c compiler. Take the 
+following...
+
+<code>
+
+@macro READ_IMM_BYTE dest
+mov r0,$02000000
+add r0,r0,r12
+ldr dest,[r0,+1]
+@endm
+
+</code>
+
+when you then write...
+
+<code>
+
+READ_IMM_BYTE r5
+
+</code>
+
+this expands to:
+
+<code>
+
+mov r0,$02000000
+add r0,r0,r12
+ldr r5,[r0,+1]
+
+</code>
+
+useful huh!
+
+
+NOTE: the small syntax change since version 1.5x... macro arguments should
+      now be separated by commas ! this is so that expressions can be used
+      in arguments, otherwise it cannot know when one argument finishes and
+      another begins.
+
+
+new @textarea features
+----------------------
+
+you can now place several @textarea directives though out your program, and all
+code will be assembled from this offset so that you can copy code to other peices
+of memory and then it will run correctly from there. the @endarea returns the base
+address to that before the @textarea directive. This system can be nested (upto
+20 levels :)) , but there's little practical reason to do that, it would mean you
+were copying data to one place, from where you copied some of that to somewhere else.
+
+heres an example;
+
+<code>
+	; code in rom...
+	mov r0,r1
+	and r0,r0,r5	;etc
+
+
+	@ltorg		; spill the literal pool before the new text area
+
+	@textarea $03000000
+
+	mov r1,mylabel
+	ldr r2,[r1]
+	b somewherelse
+mylabel
+	@DCD 0xFFFFFFFF
+	
+	@ltorg		; spill the literal pool at the end of your area
+	@endarea
+	
+	;more code in rom
+	...
+
+</code>
+
+if you're wondering how to move the code intended for internal work ram, heres an example
+that might help...
+
+<code>
+startofiwramcode
+	@textarea $03000000
+	mov r1,0
+	... ; your code here
+	@endarea
+endofiwramcode
+
+
+	;place a label at the start and end of the code (note: the  labels are NOT
+	;within the 'area'
+
+	;now from rom...
+
+	mov r0,startofiwramcode
+	mov r1,endofiwramcode
+	mov r2,$03000000 ; your target address
+	
+copydataloop
+	
+	ldr 	r3,[r0]+4 !
+	str 	r3,[r2]+4 !
+	cmp	r0,r1
+	ble	copydataloop
+
+</code>
+
+or, alternatively, you code use the start and end labels to program dma to do the 
+transfer, etc. 
+
+
+literal pool
+------------
+
+this applies to word load ops only,
+
+e.g. 	ldr r1,=$04000406
+
+the data is stored by the assembler until a @ltorg directive is found, at which
+point the data is assembled into the object file. Literal pool data is always
+inserted into the nearest literal pool AFTER the instruction. Literal pools must be
+branched over in your programs, unless they are placed at the very end. 
+
+.e.g
+
+<code>
+	
+	ldr r1,=$04000406
+
+	b more	
+	;... some more code...
+
+	; this tells the assembler to insert all the literals it has collected
+	; so far at this point
+	@ltorg
+
+	more
+	
+	... program continues
+	mov r1,0
+
+</code>
+
+Load instructions have a large range, but if you fail to insert a @ltorg directive within
+the range of a ldr,=... instruction, the assembler will raise an error. 
+
+Also note,
+<code>
+	mov r1,labelName
+</code>
+is actually now assembled as a ldr r1,=$labelAddress  (this was new to 1.4) so you should 
+provide a @ltorg region for these instructions. If you do not, the assembler will try to
+add a pool at the end of the object file, but if this is out of range of the instructions,
+an error will be raised. This change has been made because it is more efficient than using
+a combination of mov's and adds to make up the label's address, as was done in previous 
+versions.
+
+In 1.6, @pool can be used in place of @ltorg, they do the exact same thing
+
+numbers
+-------
+
+decimal, e.g.	<code> mov r0,1024 </code>
+
+hex	 e.g.	<code> mov r0,0x400 </code>
+or	 	<code> mov r0,$400	</code>
+
+binary	 e.g.	<code> mov r0,%100000000000 </code>
+
+NEW!!
+ascii	 e.g.	<code> mov r0,'A' </code>
+
+all constants can be prefixed with # if you like,
+e.g.	<code>mov r0,#0x4000000</code>
+
+
+labels
+------
+
+all label definitions are placed on lines of their own. They no longer require
+colons, e.g.
+
+<code>
+label1
+	b label1
+</code>
+
+You can still use colons to mark labels if you like.
+
+comments
+--------
+
+comments begin with ; and the assembler ignores all tokens from here to the end of the
+line. comments can be on the end of lines after instructions, labels or directives, or
+on their own lines.
+
+Now you can also use C style block comment syntax, i.e /* to start a comment block
+and */ to end a comment block. This can be useful for commenting out whole sections
+of code whilst debugging, or changing parts of source without losing what you've already done,
+e.g.
+
+<code>
+		mov r0,/*100*/200
+</code>
+
+The sample above demonstrates the use of this comment syntax to experiment with new
+values whilst retaining old ones, which you cannot do with ; style line comments.
+
+indentation
+-----------
+
+there are no limits on indentation.
+
+registers
+---------
+registers are named r0,r1...r15. 
+
+You can also refer to r15 as "pc", r14 as "lr", and r13 as "sp"
+
+cpsr and spsr are available only to msr and mrs instructions and are written
+as "cpsr" / "cpsr_flg" and "spsr" / "sprs_flg" (get the ARM7DTMI manual from www.arm.com)
+
+e.g.	
+<dir>
+	msr r0,cpsr
+	msr r0,spsr
+	mrs cpsr,r0
+	mrs spsr,r0
+</dir>
+
+Note that if you have "special" names for any registers, you can use @define to 
+achieve the desired effect...
+
+<dir>
+@define ret r0
+</dir>
+
+then ...
+
+<code>
+mov ret, 1
+mov pc,lr
+</code>
+
+I wouldn't personally suggest this is a very good idea, but you might like to do this for 
+instance if to make sure all your procedures return values in r0. As a matter of fact,
+the pre-processor in effect uses this exact method to allow "pc","lr" and "sp" to be used
+instead of r15,r14,r13.
+
+pseudo ops
+----------
+
+	addr rd,label
+	
+loads the address of a label from the literal pool into register rd. you can also do the
+following... addr rd,label|1 which is very useful in preparation for a switch into thumb.
+infact, label can be subject to any math operation.
+
+NOTE: there is a small 'bug' in this which is you cannot put parenthesis around
+label, .eg. addr rd,(label|1) why? well, this instruction carries out special optimistion
+to remove duplicates from the literal pools, and this unfortunately interferes a little
+bit with the expression parser. still, its a small price to pay for a small object file, huh?
+
+	nop
+
+in ARM,this assembles to andeq r0,r0,r0 which does nothing and sets no flags, and takes 1 cycle.
+in THUMB this assembles to mov r8,r8 since high register mov operations don't set any
+status flags (again, 1 cycle). Thanks to Joat for pointing this out to me ;)
+
+
+
+<b>
+8. v1.6	Assembler directives
+----------------------------
+</b>
+Assembler directives are not case sensitive.
+
+The escape character for assembler directives is @. It is preferntial to 
+use an escape character, because it makes preliminary passes faster, and
+allows these directives to be used as label names if you wish.
+
+@arm	(default) & @thumb
+--------------------------
+@arm tells the assembler to assemble arm opcodes. 
+@thumb	tells the assembler to assemble thumb opcodes
+
+NOTE:
+remeber, the cpu always starts in ARM mode. heres the code you need to get into THUMB mode...
+
+<code>
+@arm
+	addr r0,thumb_code|1 		; the | 1 ORs the address by 1 to make switch into thumb
+	bx   r0
+
+@thumb
+thumb_code
+	add r1,5			; etc...thumb code until..
+	addr r0,arm_code		; don't OR with 1
+	bx r0
+@arm
+arm_code
+	add r1,r2 LSL 8			; back in ARM
+
+</code>
+
+
+@echo
+-----
+
+this directive is for relaying information back to you while your code is assembled. 
+e.g.
+
+<code>
+@echo	" current size of program : = ", £ - PROGRAMSTART
+</code>
+
+(where £ means the current value of the program counter)
+
+the general form is:
+<dir>
+@echo  string/expression,string/expression.... 
+</dir>
+upto the end of the line
+
+
+@lineno
+------
+
+this simple echos the current line number. note that the directive will itself take 
+up a line ;)
+
+@org
+----
+
+this directive can be used to move the assembler on to a specific point in the object
+file. It takes into account the @textarea address, which defaults to 0x08000000.
+
+so, to advance the program to 0x200 bytes in...
+
+<dir>
+@org 0x08000200
+</dir>
+
+
+@fsize
+------
+
+This is used to pad the object file to a specified size, the syntax
+is eg 
+<dir>
+@fsize 32
+@fsize 64
+@fsize 128
+</dir>
+and so on. The number indicates the number of KILOBYTES that the file will be padded
+to, so 32 creates a 32k (32*1024) output file. The file is padded with 0xFFs because this is 
+meant to be more efficient to compress than 00s
+
+This directive can basically go anyway in the file, but obviously its neatest to put it
+at the start. The size you specify will be remembered until the end and then the padding
+is done.
+
+
+@big & @little
+--------------
+
+These directives set the endienne configuration of the object file. These directives
+affect all code that follows from them. If you wanted, you could even specify some
+parts to be @big and other parts to be @small (don't know why that would be useful, though)...
+
+The assembler is by default set to little, so if you are just assembling for the gameboy
+Advance, don't worry about this directive.
+
+
+@ascii
+------
+
+this is now the same as @dcb...so check out that directive ;)
+
+
+@include
+--------
+
+This is for including source files for compilation. The source files you include
+must be compatible with goldroad ARM asm. They are expanded inline at the pre-
+processor stage and assembled.
+<dir>
+e.g	@include gbaheader.asm
+</dir>
+there is (theoretically) no limit on the nesting of includes. e.g. your include file
+could include some other files, each of which themselves include other files.
+Just make sure you don't set up circular dependencies, e.g. header 1 includes header 2
+which includes header 1...
+
+@incbin
+-------
+
+Imports raw data into a project. 
+
+.e.g 	@incbin colours.pal
+
+to reference this code, you should place a label above the directive.
+
+.e.g	
+<code>
+	b start
+
+pal_colour_data
+
+	@incbin colours.pal
+	
+start
+	mov r0,pal_colour_data
+</code>
+
+@define
+-------
+
+defines constant number values to variable names.
+
+<code>
+.e.g	@define palram	0x06000000
+
+	mov r0,palram
+</code>
+this assembles to
+<code>	
+	mov r0,0x06000000
+</code>
+
+;;;	  Note : you CANNOT use this feature to "alias" the names of instructions 
+;;;       or labels, it won't work!
+
+
+in version 1.5 you CAN do this, no problem :)
+
+
+in version 1.6, you can supply an expression as the define value, e.g.
+
+<code>
+@define BIT31 (0x1<<31)
+</code>
+
+NOTE: there is currently 1 bug in this...normally defines are recursive. e.g.
+<code>
+@define FIRST 5
+@define SECOND FIRST
+</code>
+
+so doing 
+<code>
+mov r1,SECOND
+</code>
+
+assembles to...
+<code>
+mov r1,5
+</code>
+
+however, this does NOT hold if the second define involves an expression,.e.g.
+<code>
+@define	SECOND (FIRST + 1) 
+</code>
+hopefully, this will be fixed very soon ;)
+
+@dcb
+----
+define byte
+<dir>
+e.g	@dcb 0xFF
+or	@dcb 1,2,3,4,5,6,7,8,9
+</dir>
+
+in version 1.6, @dcb is much more versatile...
+e.g.
+
+<code>
+	@dcb "hello",'A',5
+</code>
+the general format is 
+<dir>
+@dcb  string|expression,string|expression
+</dir>
+
+
+@dcw
+----
+define word
+<dir>
+e.g	@dcw 0xFFFF
+or	@dcw 0x1000,0x2000,0x3000,0x4000	...until end of line
+</dir>
+
+the general format is 
+<dir>
+@dcw  expression,expression...
+</dir>
+
+
+@dcd
+----
+define double word
+<dir>
+e.g	@dcd 0xFFFFFFFF
+or	@dcd 0x10000000,0x200000000,0x30000000	...until end of line
+</dir>
+or
+<dir>
+ 	@dcd mylabel,myotherlabel		...
+
+	to assemble label addresses into the object code
+</dir>
+the general format is 
+<dir>
+@dcd  expression,expression....
+</dir>
+
+
+<code>
+;***************************************************
+; jump tables
+;***************************************************
+
+jumptable:
+	@dcd myfunc1,myfunc2,myfunc3,myfunc4,myfunc5
+
+myfunc1
+	; function code here
+myfunc2
+	; function code here
+myfunc3
+	; function code here
+myfunc4
+	; function code here
+myfunc5
+
+	mov r0,jumptable
+	mov r1,5		; if we want myfunc5
+	mov r1,r1 LSL 2 	; multiply by 4 for scalar size
+	mov r2,[r0,+r1]		; load subroutine address
+	bx r2			; jump to sub routine
+
+;**********************************************************
+</code>
+
+NOTE:
+to make a thumb jump table...
+<code>
+THUMBJUMP
+@DCD	thumb_1_func|1,thumb_2_func|1,...
+</code>
+i.e. OR all the addresses by 1
+
+
+
+
+@dup directive.
+---------------
+
+assembles a block of bytes, halfwords or words into memory
+
+syntax: 
+<dir>
+@dup dcb|dcw|dcd expression1,expression2
+</dir>
+
+expression1 is the number of units to assemble, expression2 is the value of the
+units.e.g.
+<code>
+@dup dcb 0x50,0xFF
+</code>
+	 
+NOTE: you CAN use labels in expression1...BUT...if the value of the label
+if liable to change between the 2 passes of the assembler, i.e. it is forward referenced
+in relation to the @dup directive, then you MUST NOT DO IT!!! this will throw all subsequent
+labels out of line :O
+
+@dup directives cannot be nested.
+
+;assembler automatically places subsequent code on word aligned boundaries,
+;irrespective of the number of bytes generated by #dup
+
+in v1.4 onwards, no auto alignment is done, except when an instruction is about to
+be written, or when a label is encountered.
+
+@textarea directive
+-------------------
+
+defines the base address of your code. By default this is 0x08000000.  This directive
+affects all subsequent code.
+
+e.g. @textarea 0x02000000 	for multi boot gba code
+
+
+Using labels
+------------
+
+labels can be addresses with mov load & store instrctions.
+
+e.g. mov r0,label		;loads the address of a label into the register
+e.g. ldr r0,[label] 		;loads the data from the address of the label
+e.g. ldrsh r0,[label]		;makes a pc-relative load if possible
+
+also labels can be used with the @DCD directive, see above.
+
+In 1.6,
+
+the addr pseudo op can be used to load the value of labels, for both ARM and THUMB.
+in thumb mode you cannot use mov.
+
+<code>
+	addr r0,label	; same in arm and thumb
+</code>
+
+NOTE: due to THUMB alignment restrictions, sometimes an addr opcode will assemble
+to 2 instructions...a NOP followed by the load.
+
+NOTE:
+Due to the power of the stack calculator, you can also you ldr,= to load label
+values (in both ARM and THUMB modes), however, this is less recommended than
+using addr because addr is deisgned to optimise the size of the literal pool by 
+preventing duplicate entries, wheras ldr is not.
+
+
+<b>
+9. bug reports
+--------------
+</b>
+please email bug reports to robware@another.com
+
+One useful thing you can do is if an error or something occurs, and something is 
+assembled incorrectly, then locate the file called 'copy.txt' in the directy of 
+the assembler and send this to me. This file is made by the assembler every time it
+is used and contains you source file with all source includes, defines and macros expanded
+inline. 
+<b>
+10.plans for next version
+------------------------
+</b>
+-	elf file output
+-	bug fixes ?
+-  	re-write pre-processor
+<b>
+
+11. known bugs
+--------------
+
+1) @defines with expressions in are not recursive
+2) addr opcode cannot use parenthesis around the whole outside of the expression	
+
+
+12.(un)interesting facts about goldroad ARM assembler
+-----------------------------------------------------
+</b>
+;;the project comprises 12 source files
+;;totalling 3035 lines of code (this is out of date...its much more ;) )
+i guess a more realistic estimation now would be 20 source files, 8000 lines of code
+;;80% C++, 20% C, heavy use of structures
+more like 90% C++ now.
+compiled with msvc++ 6
+;;goldroad ARM assembler represents about 3 weeks hard work, mostly at 4 in the morning
+make that 2 months :)
+<b>
+13. about me
+------------
+</b>
+I'm a 20 yr old student from England. I study economics, but have been programming
+since I was about 10. I have decided I want to work in the computer industry so
+have spent the last 2 or so years working furiously on programming projects to build
+up experience. This, with my degree, hasn't left much time for work and stuff, so
+I'm pretty skint. Not that I really care about money anyway. 
+
+;However, when goldroad
+;assembler is a little more polished it may become shareware, with just a small fee (say
+;£5) to register.
+
+scratch that.  This application will always and forever be free. Of course, donations
+won't be refused :).  Also, if you have any special feature you would like adding for
+a specific task (e.g. machine specific...) then a small donation could help it to happen.
+
+visit www.goldroad.co.uk
+
+-foolsgold.
+
+<b>
+14. thanks & greetings
+----------------------
+</b>
+Many thanks to Robin Leffmann (Djinn) for all his cool suggestions and 
+bug testing.
+
+Thanks to everyone else who has sent me nice emails and/or bug reports
+
+greetings to everyone at #gbadev, gbadev.com, gbaemu.org, devrs.com,
+and all the other gba dev / emulation sites
+
+greetings to all devrs and emulation authors too :-)
+
+<b>
+15.dedication
+-------------
+</b>
+This is dedicated to Mr Richey James Edwards, a fantastic lyricist
+(and guitarist :)) who has been missing since 1995.
+	
+		" ON THESE PLAGUED STREETS OF PITY / 
+			YOU CAN BUY ANYTHING /
+		FOR $200 ANYONE CAN CONCEIVE A GOD ON VIDEO "
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+<6>
+15.appendix: 	Source code examples - see website for more examples
+------------
+</b>
+NB: these are pretty out of data and don't use all the features of v1.5 (let alone 1.6 :P)
+    check my website for more up-to-date code
+    also check www.gbadev.org for several source codes which use my assembler.
+
+<code>
+
+; splash screen demo
+; assembled with goldroad ARM assembler
+
+	b start
+pic
+	@INCBIN goldroad2.bin
+
+palram
+    @DCD 0x05000000
+
+vram
+    @DCD 0x06000000
+
+mode4
+    @DCD 0x00000404
+
+
+start
+	mov r0,0x04000000
+	ldr r1,[mode4]
+	str r1,[r0]
+
+	mov r1,pic
+	ldr r0,[palram]
+	mov r4,0x100
+
+trans
+	ldrh r3,[r1]+2 !
+	strh r3,[r0]+2 !
+	subs r4,r4,1
+	bne trans
+
+	ldr r0,[vram]
+	mov r4,0x9600	
+
+show
+
+	ldrh r3,[r1]+2 !
+	strh r3,[r0]+2 !
+	subs r4,r4,1
+	bne show
+
+fin
+	b fin
+
+
+example 2
+---------
+
+;bad raster bar demo
+;assembled with goldroad assembler
+;www.goldroad.co.uk
+
+	b setup
+
+palram		
+	@DCD 0x05000000	;pallette ram address
+videoram
+	@DCD 0x06000000	;video ram address
+lcy
+	@DCD 0x04000006	; lcy register address
+mode4
+	@DCD 0x00000404	; mode 4 config
+
+setup
+	ldr r10,palram
+	ldr r9,videoram
+	ldr r8,lcy	
+
+	ldr r5,mode4	
+	str r5,[r8,-6]		;start mode 4
+	
+main	
+	mov r5,0xBB		;form a colour
+	add r5,r5,r5 LSL 8
+
+	mov r9,0xAA		;form another colour
+	add r9,r9,r9 LSL 8
+
+	mov r3,0
+	mov r4,15
+
+floop
+		
+	str r5,[r10]		;store colour 1 in pallete entry #1
+	
+	mov r1,r3		 
+	bl waitln		;wait for raster line specified in r3
+	
+	str r9,[r10]		;now store colour 2 in pallete entry #1
+
+	mov r1,r4		;wait for raster 15 lines on
+	bl waitln
+
+	add r3,r3,2		;increase raster bar counters
+	add r4,r4,2
+	
+	cmp r3,160		;see if at bottom of screen
+	moveq r3,0		;if so, reset raster counters
+	moveq r4,15		
+	addeq r5,r5,100		; change the colours
+	addeq r9,r9,100
+
+	b floop	
+
+waitln				;waits for a raster line specified in r1
+	
+	ldrh r0,[r8]		;load data from lcy register
+	cmp r0,r1		;compare to argument in r1
+	bne waitln		;load until equal
+	
+	mov pc,lr		;return to caller
+
+
+example 3
+---------
+
+;demo that draws a box
+;assembled with goldroad assembler
+
+start
+
+	b main
+
+io
+	@DCD 0x04000000
+pal
+	@DCD 0x05000000
+video
+	@DCD 0x06000000
+mode4
+	@DCD 0x00000404
+
+main
+
+	ldr r0,[io]
+	ldr r1,[pal]
+	ldr r2,[video]
+	ldr r5,[mode4]
+
+	str r5,[r0]
+
+	mov r5,0xF
+	add r5,r5,r5 LSL 4
+	add r5,r5,r5 LSL 8
+	mov r5,r5 LSL 16
+
+	str r5,[r1]
+	
+draw
+
+	mov r5,1
+	add r5,r5,r5 LSL 8
+	add r5,r5,r5 LSL 16
+
+	mov r7,70
+	mov r3,240
+	mov r4,30
+	mul r3,r3,r4
+	add r2,r2,r3
+
+accline
+	str r5,[r2,r7]
+	add r7,r7,1
+	cmp r7,170
+	bne accline	
+	
+	mov r3,0	
+	mov r4,240
+	mov r10,r5
+	mov r5,r5 LSR 16
+	mov r5,r5 LSL 16
+
+downline	
+
+	add r7,r7,r4
+	str r5,[r2,r7]
+	add r3,r3,1
+	cmp r3,100
+	bne downline	
+
+	mov r5,r10
+	mov r3,100
+
+leftline
+
+	str r5,[r2,r7]
+	sub r7,r7,1
+	sub r3,r3,1
+	cmp r3,0
+	bne leftline
+
+	mov r5,r5 LSL 16
+	mov r5,r5 LSR 16
+	mov r3,100
+
+upline
+
+	str r5,[r2,r7]
+	sub r7,r7,240		
+	subs r3,r3,1
+	bne upline
+
+	mov r5,0
+
+rotpal
+
+	mov r6,r5
+	mov r6,r6 LSL 16
+	str r6,[r1]
+	add r5,r5,1
+	b rotpal					
+
+end
+	b end
+
+
+example 4
+---------
+; simple (bad) raster demo
+
+start
+
+	b main
+
+data
+	@DCD 0x00000404	;mode 4 configuration
+
+main
+	mov r0,0x4000000
+	ldr r1,data
+	str r1,[r0]
+	mov r8,0
+loop
+	mov r5,0x5000000
+	str r8,[r5]
+outer
+
+	mov r9,0
+
+wait
+	mov r0,0x4000000
+	add r0,r0,4	
+	ldrb r1,[r0]
+	ands r1,r1,2
+	beq wait
+
+	add r9,r9,1
+	cmp r9,5
+	bne wait
+
+	add r8,r8,1
+	cmp r8,0xFF
+	moveq r8,0
+	b loop
+
+
+</code>
+
+
+
+		" NIHILISTS: ONE MORE EFFORT AND YOU COULD 
+		  BE REVOLUTIONARIES ! " 
+		
+		-foolsgold.
+		www.goldroad.co.uk
+
+</pre>
+
+</body>
+</html>

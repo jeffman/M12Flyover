@@ -1,0 +1,62 @@
+80CA448 is a very good entry point
+30009F4: CURRENT WINDOW
+
+TODO:
+ - have the game decompress the text tiles to WRAM instead of VRAM
+ - at this entry point, construct the VWF into VRAM
+ - at the beginning of the vwf, calculate the X tile value from the map address
+ - check for new lines and start a new tile buffer by checking the x value each time
+
+NULLSPACE
+---------
+
+0xF8C800 - 0xFDFFFF (342016 bytes)
+0xFE4000 - 0xFE4FFF (4096 bytes)
+0xFE9300 - 0xFFD1AF (81584 bytes)
+0xFFE110 - 0xFFEFFF (3824 bytes)
+0xFFFF00 - 0xFFFFFF (256 bytes, OK for width table?)
+
+Can expand to 32MB, probably will have to for moving the English script.
+Then we can put stuff in the old script space too.
+
+NEW STUFF
+---------
+0xF90000: Width table (256 bytes)
+
+private void m12_8x16_VWF(u16 letterTile, u32 mapAddress)
+{
+	// Assumes the text tiles have been decompressed to 0x2038000
+	// mapAddress is useless unless it's on the first letter
+	
+	// letterTile = r4, let's convert it to a letter
+	// this is before 0x100 is added to r4
+	r1 = r4 >> 6;
+	r1 <<= 5;
+	r4 &= 0x1F;
+	r4 |= r1;
+	
+	// X position within the tile (0 - 7)
+	byte letterPos = ldrb[0x203C000]; // r0
+	
+	// 
+	byte mapTile = ldrh[0x203C002]; // r1
+	int mapAddress = ldr[0x203C004]; // r2
+
+	// Free: r5, r6, r7
+
+	// The first time it's executed for the string, [sp - 4] > 0
+	if (ldr[sp - 4] > 0)
+	{
+		// We can reset the tile buffer to 0 (0x6000000)
+		letterPos = 0;
+		mapTile = 0x100;
+	}
+	
+	// WELDING TIME
+	// Get the width of the letter
+	r5 = ldrb[0x8F90000 + r4];
+	
+	// WRITE THE MAP DATA
+	// Add the value in [0x30051EC] to r4, then OR it with [0x3005228], THEN write it to the map data
+	r4 += ldrh[0x30051EC];
+	r4 |= ldrh[0x3005228];

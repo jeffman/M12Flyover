@@ -1,0 +1,255 @@
+ROM MAP
+=======
+
+Nullspace:
+----------
+
+0xB2BC00 - 0xEFFFFF (4,015,104 bytes) (:O)
+0xF8C800 - 0xFDFFFF (342,016 bytes (there are some breaks though, watch out, not completely empty))
+0xFE4000 - 0xFFEFFF (110,592 bytes)
+0xFFFF00 - 0xFFFFFF (256 bytes, OK for width table?)
+
+
+Text tables:
+------------
+
+POINTER TABLES ARE STORED AFTER DATA ?? OK WHATEVER
+
+80BE260 is the pointer-getter.
+
+// inputs:
+// r0 = tableAddr
+// r1 = dataAddr
+// r2 = entry
+
+// returns:
+// r0 = string address
+// r2 = entry
+// r3 = tableAddr
+
+private word GetAddressOfString(word tableAddr, word dataAddr, hword entry)
+{
+	if (LoadWord(tableAddr) < entry)
+		return 0;
+	return dataAddr + LoadWord(tableAddr + ((entry + 1) * 4));
+}
+
+-----
+
+"The year is 199X"
+[02 01 01 4C 80 34 80 48 80 45 80 00 80 59 80 45]
+[80 41 80 52 80 00 80 49 80 53 80 00 80 11 80 19
+[80 19 80 38 09 00]
+
+"Onett, a small town in Eagleland"
+[02 01 01 26
+Item names
+ - Header: B1AF94 (0x000000FD)
+ - Pointer table: B1AF98 (0xFE entries)
+ - Data: B1A694
+ - Entries are variable-length; terminated by 0xFF00
+ - Address 2 loaded at 80BF0AA: 8B1AF94
+ - Address 1 loaded at 80BF0AC: 8B1A694
+
+-----
+
+Standard things (A menu, etc.)
+ - Header: B17EE4 (0x0000009D)
+ - Pointer table: B17EE8 (0x9E entries)
+ - Data: B17424
+ - Address 1 loaded at 80BB048: 8B17EE4
+
+-----
+
+Flyovers
+ - No header; absolute-offset pointer table
+ - Pointer table: 73112C (8 entries)
+ - Each 4-byte entry points to flyover text
+ - Same control codes as EB:
+   [00]    - End
+   [01 XX] - Move text left from the centre of the screen by XX*4 pixels
+   [02 XX] - Move text vertically by XX tiles, base is the 8th tile
+   [08 XX] - Print player XX's name (01 to 04)
+   [09]    - New line
+   Text is BIG ENDIAN 16-bit, OR'd with 0x8000; lower byte is 00-FF, different character map
+   New font in same order as EB, based at 0
+   New = ASCII - 0x20
+ - Font data is at 0xFCE6C
+ - HOLY CRAP AUTO VWF! 80B3488 loads the width. Hack may be tricky, but possible.
+
+-----
+
+B787E
+B7A6A
+B7DC2
+B8086
+B80B2
+B812C
+B8196
+B830E
+B83D6
+B8582
+B864A
+B8726
+B8876
+B8A6A
+B8B46
+B8C9C
+B9024
+B9162
+B979A
+B9862
+B991E
+B9986
+B99E0
+B9A0A
+B9AD2
+B9B1C
+B9E46
+B9F16
+BA332
+BA4E2
+BA66E
+BA804
+BA9F0
+BACA2
+BAD68
+BAE06
+BAF8C
+BB052
+BB076
+BB240
+BB2B6
+BB2D4
+BB3F0
+BB40E
+BB526
+BB544
+BB9D8
+BB9F6
+BBB20
+BBB3E
+BBC7E
+BBC9C
+BD1EE
+BD3C4
+BF0AE
+BF25C
+BFB04
+C013C
+C06EE
+C10E6
+C1104
+C117C
+C119C
+C11C2
+C18CE
+C18E8
+C1960
+C1980
+C19A6
+C264C
+C26A4
+C2714
+C2768
+C27F8
+C2854
+C28C4
+C2918
+C29A8
+C2A00
+C2A6E
+C2AC2
+C2B34
+C2B88
+C2C1C
+C2C70
+C2D1C
+C2D76
+C2DE2
+C2E36
+C2EA8
+C2EFC
+C2F8E
+C2FE6
+C306A
+C30C2
+C3130
+C3184
+C31F6
+C324A
+C3304
+C335C
+C33C6
+C341A
+C348A
+C34DE
+C356A
+C35C2
+C3630
+C3684
+C370A
+C3762
+C37CE
+C3822
+C3892
+C38E6
+C3972
+C39C8
+C3A82
+C3AD8
+C3B40
+C3B94
+C3C00
+C3C54
+C3CE2
+C3D36
+C3D9E
+C3DF2
+C3E5C
+C3EB0
+C4C12
+C4C88
+C4D0E
+C4D96
+C4E1E
+C56B6
+C57AA
+C57E4
+C58F2
+C5926
+C5986
+C59C4
+C5E22
+C6182
+C6402
+C642E
+C64CA
+C6508
+C65CE
+C698A
+C69D4
+C6A5C
+C6A94
+C6C44
+C6C6A
+C6D68
+C6E76
+C6E90
+C6EB4
+C73A2
+C73CE
+C73EC
+C7406
+C7A66
+C7CE4
+CA21A
+D2FDE
+DAE30
+DB084
+DCD5C
+E0806
+E0D0C
+E0EEE
+E20AC
+F2430

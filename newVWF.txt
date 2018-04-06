@@ -1,0 +1,159 @@
+New line? New window? Doesn't matter. All we need to know is if
+we need to start a new tile buffer.
+
+REPLACES: 80CA43C - 80CA46B (0x30 bytes, 24 opcodes)
+
+NULLSPACE
+---------
+
+0xF8C800 - 0xFDFFFF (342016 bytes)
+0xFE4000 - 0xFE4FFF (4096 bytes)
+0xFE9300 - 0xFFD1AF (81584 bytes)
+0xFFE110 - 0xFFEFFF (3824 bytes)
+0xFFFF00 - 0xFFFFFF (256 bytes, OK for width table?)
+
+80CA442
+-------
+
+Inputs:
+	- Text read address: r7
+	- Map write address (RAM): r8
+	- Letter-to-tile lookup: [r1 + (letter << 1)]
+	- Registers r0, r2, r3, r4 are free
+	- Push r1, r5, r6 if needed
+ 
+That's all we need. To check for a new tile buffer, simply compare
+r8 to the old r8, which will be in our RAM somewhere.
+Let's begin by loading our letter into r0:
+
+ldrb r0,[r7]
+
+Variables we need, can be stored starting at 203FFF0:
+	- Map address (4 bytes)
+	- X position in buffer (1 byte)
+	- Tile buffer number
+
+PSEUDOCODE
+----------
+
+// Load the letter
+byte letter = ldrb[readAddress];
+
+// Load our variables
+int ramAddr = 0x203FFF0;
+int oldMap = ldr[ramAddr];
+int tile = ldrh[ramAddr + 4];
+byte letterPos = ldrb[ramAddr + 6];
+
+// Decide if it's the first time ever; otherwise, no check is needed
+if (oldMap == 0)
+{
+	tile = 0;
+	letterPos = 0;
+	goto skipCheck;
+}
+
+// Decide if we need to start a new line buffer
+if (((currMap - oldMap) != 2) && (letterPos > 0))
+{
+	// New buffer
+	letterPos = 0;
+	tile++;
+}
+
+skipCheck:
+
+// Get the letter width
+byte letterWidth = ldrb[0x8F90000 + letter];
+
+// Welding
+// Takes: a letter value, 
+//        a pixel position in the tile buffer (0-7),
+//        tile number to weld to
+
+// Determine VRAM tile address
+int vramAddr = 0x6000000 + ((ldrh[r1 + (tile << 1)] + ldrh[0x30051EC]) << 5);
+
+// Write the map tiles
+str[ramAddr] = currMap; // Store currMap before we change it
+for (int i = 0; i < (letterPos + letterWidth); i += 8)
+{
+	strh[currMap] = (ldrh[r1 + tile] + ldrh[0x30051EC] + (i >> 3)) | ldrh[0x3005228];
+	strh[currMap + 0x40] = (ldrh[r1 + tile] + ldrh[0x30051EC] + (i >> 3) + 0x20) | ldrh[0x3005228];
+	currMap += 2;
+}
+
+//// WELD ////
+// Get font read address
+int fontRead = 0x2038000 + (ldrh[r1 + (letter << 1)] << 5);
+
+// Upper 8 rows
+	int tmpRow = 0;
+	for (int i = 0; i < 8; i++)
+	{
+		// Get the row that's already in the tile
+		tmpRow = ldr[vramAddr + (i << 2)];
+		
+		// Weld
+		tmpRow |= (ldr[fontRead + (i << 2)] << (letterPos << 2));
+		
+		// Write back to VRAM
+		str[vramAddr + (i << 2)] = tmpRow;
+	}
+
+	// Overflowed pixels
+	
+	if (letterPos > 0)
+	{
+		int vramAddr = 0x6000000 + ((ldrh[r1 + ((tile + 1) << 1)] + ldrh[0x30051EC]) << 5);
+		for (int i = 0; i < 8; i++)
+		{
+			// Weld
+			tmpRow = (ldr[fontRead + (i << 2)] >> ((7 - letterPos) << 2));
+			
+			// Write back to VRAM
+			str[vramAddr + (i << 2)] = tmpRow;
+		}
+	}
+
+// Lower 8 rows
+	fontAddr += 0x400;
+	vramAddr += 0x400;
+	
+	for (int i = 0; i < 8; i++)
+	{
+		// Get the row that's already in the tile
+		tmpRow = ldr[vramAddr + (i << 2)];
+		
+		// Weld
+		tmpRow |= (ldr[fontRead + (i << 2)] << (letterPos << 2));
+		
+		// Write back to VRAM
+		str[vramAddr + (i << 2)] = tmpRow;
+	}
+
+	// Overflowed pixels
+	if (letterPos > 0)
+	{
+		int vramAddr = 0x6000400 + ((ldrh[r1 + ((tile + 1) << 1)] + ldrh[0x30051EC]) << 5);
+		for (int i = 0; i < 8; i++)
+		{
+			// Weld
+			tmpRow = (ldr[fontRead + (i << 2)] >> ((7 - letterPos) << 2));
+			
+			// Write back to VRAM
+			str[vramAddr + (i << 2)] = tmpRow;
+		}
+	}
+	
+// Increase letterpos
+letterPos += letterWidth;
+while (letterPos >= 8)
+{
+	letterPos -= 8;
+	tile++;
+}
+
+// Write our new variables to RAM
+strh[ramAddr + 4] = tile;
+strb[ramAddr + 6] = letterPos;

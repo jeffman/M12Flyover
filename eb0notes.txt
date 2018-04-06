@@ -1,0 +1,5 @@
+TITLE SCREEN
+============
+Tile data: F62F1C (2BPP planar, composite)
+Orb X coordinate: F0D9CA (0x50 default)
+Orb Y coordinate: F0D9CC (0x30 default)

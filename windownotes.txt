@@ -1,0 +1,9 @@
+2030992:
+ - X coord of A-button window, offset +1
+ - Y coord, +1
+ - Width, -1
+ - Height, -1
+
+3005230: table of window property table pointers, 11 windows
+
+80C8826: nop to ignore line wrap?

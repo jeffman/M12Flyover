@@ -1,0 +1,84 @@
+// Welding and fonts
+INSERT F9FC00 weldletter.bin
+INSERT F90000 widths.bin
+INSERT F90100 largewidths.bin
+INSERT AFF584 font1a.bin
+INSERT B00584 font1b.bin
+
+
+
+/// ********************************************* ///
+/// **********   FLYOVERS   ********************* ///
+/// ********************************************* ///
+
+// Relocate the flyover font
+HEX B3274 00 40 FE 08
+INSERT FE4000 bigfont.bin
+
+// Print all 16 rows
+HEX B3262 0F
+
+// Print all 16 columns
+HEX B325C 07
+
+// Alter the flyover palette so the borders don't show (orig 0x739C)
+HEX FCE50 00 00
+
+// Weld the odd-numbered flyover letters
+HEX B3254 00 B5 49 F0 D3 FE
+INSERT FD000 flyoverweld.bin
+
+// Change the [01 XX] flyover code to pixels from left of screen
+HEX B332C 02 E0
+
+// Add flyover text
+INSERT FB0000 flyovertext_FB0000.bin
+HEX 73112C 00 00 FB 08 26 00 FB 08 6C 00 FB 08
+
+
+/// ********************************************* ///
+/// **********   MISC TEXT   ******************** ///
+/// ********************************************* ///
+
+// Add "No problem here" text
+INSERT FAFFEA noproblem.bin
+HEX 23F5C EA FF FA 08
+
+// Add A menu text (no PSI)
+INSERT FAFFB0 amenu1.bin
+HEX B17EEC 8C 8B 49 00
+
+/// ********************************************* ///
+/// **********   OTHER   ************************ ///
+/// ********************************************* ///
+
+// Change file select screen bg pal to be like EB
+HEX 6DAF87 70 4B AD 6E
+
+// Expand the compressed EB font
+INSERT B2C000 font_0x6D9808.bin
+HEX 19BC 92 01 0C DF C0 46
+HEX 1B4C 00 C0 B2 08
+
+// Make the A menu one tile wider
+HEX B7772 0B
+
+// VWF
+HEX CA442 01 48 01 4B 18 47 6D A4 0C 08 01 00 FA 08
+INSERT FA0000 newVWF2.bin
+
+// Flyover VWF
+HEX B3482 01 48 00 47 00 00 01 08 FA 08 00 00
+INSERT FA0800 largevwf.bin
+
+// Cleary
+HEX B89B6 C0 B4 7E 46 09 36 00 4F 38 47 01 04 FA 08 C0 BC
+INSERT FA0400 cleary2.bin
+
+// Convert new letters
+// Dollar sign
+HEX B8A24 24
+// Double-zero
+HEX B8A2A 26
+// Numbers
+HEX CA732 30 31

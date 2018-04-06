@@ -1,0 +1,9 @@
+B17445: " TLK  GDS", etc
+
+FF00 - end
+FF01 - line break
+FF02 - wait with blinking cursor
+
+FF1D - wait without cursor
+
+8EB14 - text pointer table! One of many. Each entry is 20 bytes, and [+12] is the address of the text. FIND SIMILAR TABLES
